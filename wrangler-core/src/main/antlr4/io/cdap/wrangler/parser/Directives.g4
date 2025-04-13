@@ -140,7 +140,7 @@ numberRange
  ;
 
 value
- : String | Number | Column | Bool
+ : String | Number | Column | Bool | BYTE_SIZE | TIME_DURATION
  ;
 
 ecommand
@@ -166,6 +166,16 @@ number
 bool
  : Bool
  ;
+
+ byte_size 
+ : BYTE_SIZE
+ ;
+
+ time_duration 
+ :  TIME_DURATION
+ ;
+
+
 
 condition
  : OBrace (~CBrace | condition)* CBrace
@@ -279,6 +289,15 @@ EscapeSequence
    |   UnicodeEscape
    |   OctalEscape
    ;
+BYTE_SIZE
+  : '\'' [0-9]+ ('.' [0-9]+)? BYTE_UNIT '\''
+  | '"'  [0-9]+ ('.' [0-9]+)? BYTE_UNIT '"'
+  ;
+
+TIME_DURATION
+  : '\'' [0-9]+ ('.' [0-9]+)? TIME_UNIT '\''
+  | '"'  [0-9]+ ('.' [0-9]+)? TIME_UNIT '"'
+  ;
 
 fragment
 OctalEscape
@@ -311,3 +330,11 @@ fragment Int
 fragment Digit
  : [0-9]
  ;
+
+fragment BYTE_UNIT
+  : ('kb' | 'KB' | 'mb' | 'MB' | 'gb' | 'GB' | 'tb' | 'TB' | 'pb' | 'PB')
+  ;
+
+fragment TIME_UNIT
+  : ('us'|'US'|'ms' | 'MS' | 's' | 'S' | 'm' | 'M' | 'hr' | 'HR')
+  ;
