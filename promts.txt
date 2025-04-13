@@ -1,0 +1,137 @@
+(a) Grammar Modification
+
+1.String   : '\'' ( EscapeSequence | ~('\'')) * '\'' | '"' ( EscapeSequence | ~('"')) * '"'; can you explain how the string is defined . 
+
+2. how do i define a lexer rules that contain both numbers and words ?
+
+3. byte_size:
+  :
+    '\''[0-9]+ ('.' Digit*)? byteSizeArg+ \''
+ |  '"' [0-9]+ ('.' Digit*)? byteSizeArg+  '"'
+  ;
+time_duration:
+  :
+    '\''[0-9]+ ('.' Digit*)? timeDurationArg+ \''
+ |  '"' [0-9]+ ('.' Digit*)? timeDurationArg+  '"'
+  ;
+
+fragment byteSizeArg
+  :
+    ('kb|'KB'|'mb'|'MB'|'gb'|'GB'|'tb'|'TB'|'pb'|'PB')
+  ;
+fragment timeDurationArg
+  :
+    ('ms'|'MS'|'s'|'S'|'m'|'M|'hr'|'HR')
+  ;  ive added these two (Add the lexer rules for BYTE_SIZE and TIME_DURATION (including helper 
+fragments BYTE_UNIT, TIME_UNIT). 
+○ Modify relevant parser rules (e.g., value, or create new specific rules like 
+byteSizeArg, timeDurationArg) to accept BYTE_SIZE and TIME_DURATION 
+tokens where appropriate for directive arguments. ) . is what i did correct ?
+
+(b) API Updates (wrangler-api module): 
+
+1. Provide methods to retrieve the value in a canonical unit (e.g., long 
+getBytes() for ByteSize) " if i give a string like "10ms" are they asking me to extract the 10 and ms from that string ? 
+
+2.  public double extract_number(value)
+   {
+        return Double.parseDouble(value.replaceAll("[^0-9.]", ""));
+   }
+   public String extract_unit(value)
+   {
+        return String.parseString(value.replaceAll("[0-9.]", ""));
+   }
+   public long getBytes(number,unit)
+   {
+        if(unit=='kb' || unit=='KB')
+        {
+            return (long)(number*1024);
+        }
+        if(unit=='mb' ||unit== 'MB')
+        {
+            return (long)(number*1024 * 1024);
+        }
+        if(unit=='gb' ||unit== 'GB')
+        {
+            return (long)(number*1024 * 1024 * 1024);
+        }
+        if(unit=='tb' ||unit== 'TB')
+        {
+            return (long)(number*1024L * 1024 * 1024 * 1024);
+        }
+        if(unit=='pb' ||unit== 'PB')
+        {
+            return (long)(number*1024L * 1024 * 1024 * 1024 * 1024);
+        }
+   }is it correct ?
+
+3.[ERROR] Failed to execute goal org.apache.rat:apache-rat-plugin:0.10:check (rat-check) on project wrangler-api: Too many files with unapproved license: 2 See RAT report in: F:\zeotap\wrangler\wrangler-api\target\rat.txt -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR]
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :wrangler-api . why am i getting this error ? 
+
+(c) Core Parser Updates
+
+1. public RecipeSymbol.Builder visitByteSizeArg(DirectivesParser.StringListContext ctx) {
+    String str = ctx.BYTE_SIZE();
+    builder.addToken(new ByteSize(str)); 
+    return builder;
+  }
+  public RecipeSymbol.Builder visitTimeDurationArg(DirectivesParser.StringListContext ctx) {
+    String str = ctx.TIME_DURATION(); 
+    builder.addToken(new ByteSize(str)); 
+    return builder;
+  } why is this giving error like [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project wrangler-core: Compilation failure: Compilation failure:
+[ERROR] /F:/zeotap/wrangler/wrangler-core/src/main/java/io/cdap/wrangler/parser/RecipeVisitor.java:[332,21] cannot find symbol
+[ERROR]   symbol:   method BYTE_SIZE()
+[ERROR]   location: variable ctx of type io.cdap.wrangler.parser.DirectivesParser.StringListContext
+[ERROR] /F:/zeotap/wrangler/wrangler-core/src/main/java/io/cdap/wrangler/parser/RecipeVisitor.java:[337,21] cannot find symbol
+[ERROR]   symbol:   method TIME_DURATION()
+[ERROR]   location: variable ctx of type io.cdap.wrangler.parser.DirectivesParser.StringListContext
+[ERROR] -> [Help 1]
+[ERROR] . ?
+
+
+(d)New Directive Implementation 
+
+1. Why am I getting compilation errors for DirectiveDef and Store in my Wrangler directive?
+2. How do I resolve cannot find symbol errors for getNanos, convertTo, and isFinalBatch?
+3. What’s the correct alternative to DirectiveDef.builder() in Wrangler’s UsageDefinition?
+4. How does UsageDefinition.builder() actually work? The docs show it requires a String parameter?
+5. How should ByteSize and TimeDuration classes be used for unit conversions?
+6. Do these classes already have built-in methods like getBytes or getNanoSeconds?
+7. How can I aggregate stats (bytes + time) in a Wrangler directive without the missing Store class?
+8. What can i do if context.getStore() is  not available?
+9. Here’s my TimeDuration.java and ByteSize.java. how do I adapt my directive to use their methods?
+10. How do I rewrite the directive to avoid dependency on DirectiveDef?
+
+(e) Testing
+
+1. there is test folder in wrangler core do i add these test cases  there ?
+2. Can you clean up the test class AggregateStatsDirectiveIntegrationTest and correct any errors, especially with unit conversion and naming conventions for units (e.g., 'kb' to 'KB')?
+
+2. Can you write a unit conversion test that verifies the conversion of data sizes from KB to MB and response times from milliseconds to seconds, ensuring proper aggregation?
+
+3. Average Time Calculation:
+Prompt: "How can I implement a test that calculates the average time in seconds for a series of response times in milliseconds, using proper conversions?
+
+4. Error Handling for Invalid Units:
+Prompt: "Can you create a test case that checks for an error when an invalid unit (like 'invalid_unit') is used in the aggregation recipe?
+
+5. Can you write a test that verifies different output units for aggregated values, such as converting from bytes to KB and from milliseconds to seconds?
+
+6. Please verify the expected output in my tests where I assert results for unit conversions, ensuring calculations are correct for size in MB and time in seconds.
+
+7. I’m getting initialization errors in my tests related to SystemDirectiveRegistry. Can you help me ensure that all dependencies are correctly initialized and accessible?
+
+8. How can I fix a NoClassDefFoundError related to SystemDirectiveRegistry that occurs during my test execution?
+
+9. Can you help me correct assertions in my test for aggregating time and size, where the expected values are incorrect, like expecting 1.577 but getting 1.509?
+
+10. How can I make sure that the ByteSize and TimeDuration classes properly handle unit conversion and string parsing in a case-insensitive manner?
